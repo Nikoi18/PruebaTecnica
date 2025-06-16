@@ -1,40 +1,55 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+from django.db import transaction
 from .models import InventoryItem, StockMovement
 from .serializers import InventoryItemSerializer, StockMovementSerializer
 
 
-class InventoryList(generics.ListAPIView):
+class InventoryList(generics.ListCreateAPIView):
+
+    queryset = InventoryItem.objects.all().order_by('sku')
+    serializer_class = InventoryItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+
+        with transaction.atomic():
+            item_instance = serializer.save()
+            if item_instance.quantity > 0:
+                StockMovement.objects.create(
+                    item=item_instance,
+                    quantity_change=item_instance.quantity,
+                    reason="Creación inicial de stock"
+                )
+
+
+class InventoryItemDetail(generics.RetrieveUpdateDestroyAPIView):
+
     queryset = InventoryItem.objects.all()
     serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_update(self, serializer):
 
-class InventoryItemUpdate(generics.UpdateAPIView):
-    queryset = InventoryItem.objects.all()
-    serializer_class = InventoryItemSerializer
-    permission_classes = [IsAuthenticated]
+        original_quantity = serializer.instance.quantity
 
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        new_quantity = request.data.get('quantity')
+        with transaction.atomic():
 
-        if new_quantity is not None:
-            quantity_change = int(new_quantity) - instance.quantity
+            item_instance = serializer.save()          
 
-            StockMovement.objects.create(
-                item=instance,
-                quantity_change=quantity_change,
-                reason=f"Actualización desde la App"            )
+            quantity_change = item_instance.quantity - original_quantity
 
-            instance.quantity = new_quantity
-            instance.save()
-        
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+
+            if quantity_change != 0:
+                StockMovement.objects.create(
+                    item=item_instance,
+                    quantity_change=quantity_change,
+                    reason="Actualización desde la App"
+                )
+
 
 class StockMovementHistory(generics.ListAPIView):
+
     queryset = StockMovement.objects.all().order_by('-timestamp')
     serializer_class = StockMovementSerializer
     permission_classes = [IsAuthenticated]
