@@ -1,8 +1,12 @@
 # Proyecto de Gestión de Inventario Full-Stack
 
 Una aplicación web para la gestión de inventario, construida con un backend en Django Rest Framework que sirve a un frontend moderno y reactivo en Vue.js.
-
+![image](https://github.com/user-attachments/assets/58de089e-3571-419b-aaba-7c3f46e7bdbd)
 ![image](https://github.com/user-attachments/assets/c91805cb-c94f-44c4-a644-fb07448128e5)
+![image](https://github.com/user-attachments/assets/c128d096-e7b8-49ea-adb2-a4c172a45aa5)
+![image](https://github.com/user-attachments/assets/659a0a7c-ee1a-4608-b850-3e9cae460e2f)
+
+
 
 
 
