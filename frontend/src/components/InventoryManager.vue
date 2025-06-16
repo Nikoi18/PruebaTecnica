@@ -28,9 +28,12 @@
             <td data-label="Stock">
               <input type="number" v-model.number="item.quantity" @change="markAsChanged(item)" class="table-input" />
             </td>
-            <td data-label="Acción">
+            <td data-label="Acción" class="action-buttons">
               <button @click="updateStock(item)" :disabled="!item.changed" class="btn-secondary">
                 Actualizar
+              </button>
+              <button @click="handleDeleteItem(item)" class="btn-delete">
+                Borrar
               </button>
             </td>
           </tr>
@@ -66,22 +69,7 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import axios from 'axios';
-import { useAuthStore } from '../store/auth';
-
-const authStore = useAuthStore();
-
-const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
-});
-
-apiClient.interceptors.request.use(config => {
-  const token = authStore.state.accessToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import apiClient from '../api.js'; 
 
 const inventory = ref([]);
 const movements = ref([]);
@@ -142,6 +130,20 @@ const handleAddItem = async () => {
   } catch (error) {
     console.error("Error adding item:", error);
     alert("Error al añadir el ítem. Verifique que los datos sean únicos y correctos.");
+  }
+};
+
+const handleDeleteItem = async (itemToDelete) => {
+  if (window.confirm(`¿Estás seguro de que quieres borrar el ítem ${itemToDelete.sku}? Esta acción no se puede deshacer.`)) {
+    try {
+      await apiClient.delete(`/inventory/${itemToDelete.id}/`);
+      alert(`Ítem ${itemToDelete.sku} ha sido eliminado.`);
+      await fetchInventory();
+      await fetchMovements(); 
+    } catch (error) {
+      console.error(`Error deleting ${itemToDelete.sku}:`, error);
+      alert('Hubo un error al eliminar el ítem.');
+    }
   }
 };
 
