@@ -5,7 +5,7 @@ from .models import InventoryItem, StockMovement
 from .serializers import InventoryItemSerializer, StockMovementSerializer
 
 
-class InventoryList(generics.ListAPIView):
+class InventoryList(generics.ListCreateAPIView):
     queryset = InventoryItem.objects.all()
     serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]
