@@ -11,28 +11,32 @@ class InventoryList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
 
-class InventoryItemUpdate(generics.UpdateAPIView):
+class InventoryItemDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = InventoryItem.objects.all()
     serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]
+
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         new_quantity = request.data.get('quantity')
 
         if new_quantity is not None:
-            quantity_change = int(new_quantity) - instance.quantity
 
-            StockMovement.objects.create(
-                item=instance,
-                quantity_change=quantity_change,
-                reason=f"Actualización desde la App"            )
+            try:
+                quantity_change = int(new_quantity) - instance.quantity
+                if quantity_change != 0:
+                    StockMovement.objects.create(
+                        item=instance,
+                        quantity_change=quantity_change,
+                        reason=f"Actualización desde la App"
+                    )
+            except (ValueError, TypeError):
 
-            instance.quantity = new_quantity
-            instance.save()
+                pass
         
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+
+        return super().update(request, *args, **kwargs)
 
 class StockMovementHistory(generics.ListAPIView):
     queryset = StockMovement.objects.all().order_by('-timestamp')
